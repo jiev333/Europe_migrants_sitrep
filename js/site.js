@@ -4,7 +4,16 @@
 	- ? add interactive tips for how to use dashboard - see intro.js library - see Simon's Nepal earthquake RC 3W
 */
  
-function generateDashboard(data,geom){
+var geojsonMarkerOptions = {
+    radius: 3,
+    fillColor: "#f30806",
+    color: "#000",
+    weight: 1,
+    opacity: 1,
+    fillOpacity: 0.8
+};
+
+function generateDashboard(data,geom, mig){
     var map = new lg.map('#map').geojson(geom).nameAttr('CNTRY_NAME').joinAttr('Iso_Code').zoom(3).center([53.5,20]);
 	
 	var resLocs = new lg.column('Response Locations');   //change this 
@@ -96,7 +105,12 @@ function generateDashboard(data,geom){
 
     $("#map").width($("#map").width());
 
-    console.log(map.map()); 
+    var migActives = L.geoJson(mig, {
+	pointToLayer: function (feature, latlng) {
+		return L.circleMarker(latlng, geojsonMarkerOptions);
+	}
+    });
+    migActives.addTo(map.map());
 }
 
 
@@ -213,9 +227,15 @@ var geomCall = $.ajax({
     dataType: 'json',
 });
 
+var migActiveCall = $.ajax({ 
+    type: 'GET', 
+    url: 'data/mig_active_locs_geojson.json', 
+    dataType: 'json',
+});
+
 //when both ready construct dashboard
 
-$.when(dataCall, geomCall).then(function(dataArgs, geomArgs){
+$.when(dataCall, geomCall, migActiveCall).then(function(dataArgs, geomArgs, mig){
     var geom = topojson.feature(geomArgs[0],geomArgs[0].objects.geom);
     //console.log(geom);
     var data = hxlProxyToJSON(dataArgs[0],true);
@@ -224,7 +244,7 @@ $.when(dataCall, geomCall).then(function(dataArgs, geomArgs){
     data.forEach(function(d){
         d['Last data update'] = dateFormat.parse(d['Last data update']);
     });
-    generateDashboard(data,geom);
+    generateDashboard(data,geom,mig);
 	generateStats("#key_stats",data);
 	
 });
