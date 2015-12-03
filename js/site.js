@@ -107,10 +107,42 @@ function generateDashboard(data,geom, mig){
 
     var migActives = L.geoJson(mig, {
 	pointToLayer: function (feature, latlng) {
-		return L.circleMarker(latlng, geojsonMarkerOptions);
-	}
+			return L.circleMarker(latlng, geojsonMarkerOptions);
+		},
+		onEachFeature: function (feature, layer) {
+			console.log(feature);
+			console.log(layer);
+			layer.on({
+				'mousemove': function (e) {
+					infobox.refresh(feature.properties);
+				},
+				'mouseout': function (e) {
+					infobox.refresh();
+				}
+			});
+		}
     });
     migActives.addTo(map.map());
+	
+	var infobox = L.control();
+	infobox.onAdd = function (e) {
+		this._div = L.DomUtil.create('div', 'mapinfo');
+		this.refresh();
+		return this._div;
+	};
+	
+	infobox.refresh = function (properties) {
+		console.log(properties);
+		if (typeof (properties) != 'undefined') {
+			console.log(properties.Country);
+			console.log(properties.Location);
+			this._div.innerHTML = properties.Country + ', ' + properties.Location;
+		} else {
+			this._div.innerHTML = 'Hover a point for response locations';
+		}
+	};
+	infobox.addTo(map.map());
+	
 }
 
 
